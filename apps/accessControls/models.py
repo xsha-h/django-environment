@@ -24,6 +24,11 @@ class Accesses(models.Model):
 
     class Meta:
         verbose_name = "门禁审批表"
+        permissions = (
+            ("access_view", "门禁信息查看"),
+            ("add_access", "门禁信息申请"),
+            ("update_access", "门禁信息处理"),
+        )
 
     def __str__(self):
         return self.detail

@@ -58,6 +58,7 @@ class AccessView(generics.ListAPIView):
     """
     serializer_class = AccessSerializer
     schema = AccessSchema
+    module_perms = ['accessControls.access_view']
 
     def get_queryset(self):
         status = self.request.query_params.get("status", 0)
@@ -107,13 +108,14 @@ class AddAccessView(generics.CreateAPIView):
     |200|请求成功|状态声明|
     """
     serializer_class = AddAccessSerializer
+    module_perms = ['accessControls.add_access']
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         try:
             serializer.is_valid(raise_exception=True)
         except:
-            addLog(username=self.request.user.username, log_module="门禁管理", content="申请门禁失败")
+            addLog(user_id=request.user.username, log_module="门禁管理", content="申请门禁失败")
             return Response(data={"code": 400, "message": "门禁申请失败！"}, status=status.HTTP_400_BAD_REQUEST)
 
         self.perform_create(serializer)
@@ -121,7 +123,7 @@ class AddAccessView(generics.CreateAPIView):
         resp = Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
         resp["code"] = 200
         resp["message"] = "门禁申请成功！"
-        addLog(username=self.request.user.username, log_module="门禁管理", content="申请门禁成功")
+        addLog(user_id=request.user.username, log_module="门禁管理", content="申请门禁成功")
         return resp
 
 
@@ -150,6 +152,7 @@ class UpdateAccessView(generics.GenericAPIView):
     queryset = Accesses.objects.all()
     serializer_class = UpdateAccessSerializer
     schema = UpdateAccessSchema
+    module_perms = ['accessControls.update_access']
 
     def post(self, request, *args, **kwargs):
         try:
@@ -174,7 +177,7 @@ class UpdateAccessView(generics.GenericAPIView):
             access.save()
         except:
             return Response(data={"code": 400, "message": "参数错误"}, status=status.HTTP_400_BAD_REQUEST)
-        addLog(username=self.request.user.username, log_module="门禁管理", content=message)
+        addLog(user_id=self.request.user.username, log_module="门禁管理", content=message)
         return Response(data={"code": 200, "message": message}, status=status.HTTP_200_OK)
 
 
@@ -215,7 +218,7 @@ class AccessCountView(generics.ListAPIView):
         query_obj = query_obj.values("username").annotate(count=Count("username"))
         total = 0
         for obj in query_obj:
-            obj["username"] = User.objects.get(pk=obj["username"]).username
+            obj["username"] = obj["username"]
             total += obj["count"]
         for obj in query_obj:
             obj["count"] = obj["count"]/total
@@ -253,21 +256,21 @@ class AccessTimeView(generics.ListAPIView):
         startTime = request.query_params.get("startTime", "")
         endTime = request.query_params.get("endTime", "")
         sql = """
-            select username, sum(timestampdiff(second,start_time,end_time)) as sum_time
+            select auth_user.username, sum(timestampdiff(second,start_time,end_time)) as sum_time
             from accesscontrols_accesses, auth_user
             where status=2 and accesscontrols_accesses.username = auth_user.username
             group by accesscontrols_accesses.username;
         """
         if startTime:
             sql = """
-                select username, sum(timestampdiff(second,start_time,end_time)) as sum_time
+                select auth_user.username, sum(timestampdiff(second,start_time,end_time)) as sum_time
                 from accesscontrols_accesses, auth_user
                 where status=2 and accesscontrols_accesses.username = auth_user.username and start_time >= '{}'
                 group by accesscontrols_accesses.username;
             """.format(startTime)
         if endTime:
             sql = """
-                select username, sum(timestampdiff(second,start_time,end_time)) as sum_time
+                select auth_user.username, sum(timestampdiff(second,start_time,end_time)) as sum_time
                 from accesscontrols_accesses, auth_user
                 where status=2 and accesscontrols_accesses.username = auth_user.username and start_time <= '{}'
                 group by accesscontrols_accesses.username;
