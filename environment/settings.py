@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'user',
     'alarm',
     'scene',
+    'permission',
 
 ]
 
@@ -163,6 +164,14 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.TokenAuthentication',
     ),
+
+    'DEFAULT_PERMISSION_CLASSES': (
+        # 验证用户是否登录
+        'rest_framework.permissions.IsAuthenticated',
+        # 标记权限
+        'user.utile.ModulePermission',
+    ),
+
     # 新版的restframework需要指定默认schema
     'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema'
 }

@@ -37,6 +37,7 @@ urlpatterns = [
     url(r'^user/', include("user.urls", namespace="user")),   # 用户板块
     url(r'^alarm/', include("alarm.urls", namespace="alarm")),   # 告警板块
     url(r'^scene/', include("scene.urls", namespace="scene")),   # 场景板块
+    url(r'^permission/', include("permission.urls", namespace="permission")),   # 场景板块
     # 15!
 
 ]
