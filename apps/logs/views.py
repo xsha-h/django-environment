@@ -108,7 +108,7 @@ class LogsOutputView(APIView):
 
         # 设置HTTPResponse的类型
         response = HttpResponse(content_type='application/vnd.ms-excel')
-        response['Content-Disposition'] = 'attachment;filename=users.xls'  # 文件名称
+        response['Content-Disposition'] = 'attachment;filename=logs.xls'  # 文件名称
         # 创建一个文件对象
         wb = xlwt.Workbook(encoding='utf8')
         # 创建一个sheet对象
