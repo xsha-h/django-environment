@@ -55,6 +55,11 @@ class Alarm(models.Model):
 
     class Meta:
         verbose_name = "告警表"
+        permissions = (
+            ("alarm_view", "告警信息查看"),
+            ("deal_alarm", "告警信息处理"),
+            ("audit_alarm", "告警信息审核"),
+        )
 
     def __str__(self):
         return self.device

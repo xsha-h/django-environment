@@ -12,4 +12,5 @@ urlpatterns = [
     url(r'^alarm_count/', views.AlarmCountView.as_view(), name="alarm_count"),   # 告警类型告警占比
     url(r'^alarm_status/', views.AlarmStatusView.as_view(), name="alarm_status"),   # 告警类型告警占比
     url(r'^alarm_output/', views.AlarmOutputView.as_view(), name="alarm_output"),   # 告警信息导出
+    url(r'^alarm_notDeal/', views.AlarmNotDealView.as_view(), name="alarm_notDeal"),   # 告警未处理时间走势图
 ]

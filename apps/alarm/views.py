@@ -1,3 +1,5 @@
+import time
+from datetime import datetime
 from io import BytesIO
 
 import xlwt
@@ -56,6 +58,7 @@ class AlarmView(generics.ListAPIView):
     queryset = None
     serializer_class = AlarmSerializer
     schema = AlarmSchema
+    module_perms = ['alarm.alarm_view']
 
     def get_queryset(self):
         scene_id = self.request.query_params.get("scene_id")
@@ -107,6 +110,7 @@ class DealAlarmView(generics.GenericAPIView):
     queryset = Alarm.objects.all()
     serializer_class = DealAlarmSerializer
     schema = DealAlarmSchema
+    module_perms = ['alarm.deal_alarm']
 
     def post(self, request, *args, **kwargs):
         try:
@@ -149,6 +153,7 @@ class AuditAlarmView(generics.GenericAPIView):
     queryset = Alarm.objects.all()
     serializer_class = DealAlarmSerializer
     schema = AuditAlarmSchema
+    module_perms = ['alarm.audit_alarm']
 
     def post(self, request):
         try:
@@ -195,6 +200,7 @@ class DealManyAlarmView(generics.GenericAPIView):
     queryset = Alarm.objects.all()
     serializer_class = DealAlarmSerializer
     schema = DealManyAlarmSchema
+    module_perms = ['alarm.deal_alarm']
 
     def post(self, request):
         ids = request.data.get("ids")
@@ -245,6 +251,7 @@ class AuditManyAlarmView(generics.GenericAPIView):
     queryset = Alarm.objects.all()
     serializer_class = DealAlarmSerializer
     schema = AuditManyAlarmSchema
+    module_perms = ['alarm.audit_alarm']
 
     def post(self, request):
         ids = request.data.get("ids")
@@ -341,6 +348,7 @@ class AlarmCountView(generics.ListAPIView):
             res_dict["name"] = obj[0]
             res_dict["count"] = obj[1]/total
             data_res.append(res_dict)
+        cursor.close()
         return Response(data=data_res)
 
 
@@ -424,6 +432,7 @@ class AlarmStatusView(generics.ListAPIView):
                 res_dict["name"] = "审核不通过"
             res_dict["count"] = obj[1]/total
             data_res.append(res_dict)
+        cursor.close()
         return Response(data=data_res)
 
 
@@ -504,3 +513,73 @@ class AlarmOutputView(APIView):
         output.seek(0)
         response.write(output.getvalue())
         return response
+
+
+class AlarmNotDealView(APIView):
+    """
+    某一时刻告警未处理时间的总和
+    """
+    schema = AlarmOutputSchema
+
+    def get(self, request):
+        cursor = connection.cursor()
+        # 字符串转datetime类型
+        start = datetime.strptime(request.query_params.get("startTime"), "%Y-%m-%d %H:%M:%S")
+        end = datetime.strptime(request.query_params.get("endTime"), "%Y-%m-%d %H:%M:%S")
+
+        # 通过时间间隔获取中间的时间
+        notDealSeconds = (time.mktime(end.timetuple())-time.mktime(start.timetuple()))/5
+        one_time = datetime.fromtimestamp(time.mktime(start.timetuple())+notDealSeconds)
+        two_time = datetime.fromtimestamp(time.mktime(start.timetuple())+notDealSeconds*2)
+        three_time = datetime.fromtimestamp(time.mktime(start.timetuple())+notDealSeconds*3)
+        four_time = datetime.fromtimestamp(time.mktime(start.timetuple())+notDealSeconds*4)
+        print(start, one_time, two_time, three_time, four_time, end)
+
+        sql_one = """
+            select sum(TIMESTAMPDIFF(MINUTE,addtime,deal_time)) as alarm_time
+            from alarm_alarm
+            where deal_time >= '{}' and  deal_time < '{}'
+        """.format(start, one_time)
+        sql_two = """
+            select sum(TIMESTAMPDIFF(MINUTE,addtime,deal_time)) as alarm_time
+            from alarm_alarm
+            where deal_time >= '{}' and  deal_time < '{}'
+        """.format(one_time, two_time)
+        sql_three = """
+                    select sum(TIMESTAMPDIFF(MINUTE,addtime,deal_time)) as alarm_time
+                    from alarm_alarm
+                    where deal_time >= '{}' and  deal_time < '{}'
+                """.format(two_time, three_time)
+        sql_four = """
+                    select sum(TIMESTAMPDIFF(MINUTE,addtime,deal_time)) as alarm_time
+                    from alarm_alarm
+                    where deal_time >= '{}' and  deal_time < '{}'
+                """.format(three_time, four_time)
+        sql_five = """
+                    select sum(TIMESTAMPDIFF(MINUTE,addtime,deal_time)) as alarm_time
+                    from alarm_alarm
+                    where deal_time >= '{}' and  deal_time < '{}'
+                """.format(four_time, end)
+
+        array = [sql_one, sql_two, sql_three, sql_four, sql_five]
+        res_dict = {"one": None, "two": None, "three": None, "four": None, "five": None}
+        for i in range(len(array)):
+            cursor.execute(array[i])
+            res = cursor.fetchone()
+            temp = {}
+            if res[0]:
+                temp["minutes"] = res[0]
+            else:
+                temp["minutes"] = 0
+            if i == 0:
+                res_dict["one"] = temp
+            elif i == 1:
+                res_dict["two"] = temp
+            elif i == 2:
+                res_dict["three"] = temp
+            elif i == 3:
+                res_dict["four"] = temp
+            else:
+                res_dict["five"] = temp
+        cursor.close()
+        return Response(res_dict)
