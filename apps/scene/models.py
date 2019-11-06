@@ -19,6 +19,10 @@ class Scene(models.Model):
 
     class Meta:
         verbose_name = "场景表"
+        permissions = (
+            ("scene_view", "场景浏览"),
+            ("scene_control", "场景控制"),
+        )
 
     def __str__(self):
         return self.name
@@ -136,8 +140,8 @@ class Pm25(models.Model):
 
 class Smoke(models.Model):
     STATUS1 = (
-        (1, '正常'),
-        (0, '异常')
+        (1, '无'),
+        (0, '有')
     )
     STATUS2 = (
         (1, '在线'),
@@ -157,8 +161,8 @@ class Smoke(models.Model):
 
 class Flame(models.Model):
     STATUS1 = (
-        (1, '正常'),
-        (0, '异常')
+        (1, '无'),
+        (0, '有')
     )
     STATUS2 = (
         (1, '在线'),
@@ -178,8 +182,8 @@ class Flame(models.Model):
 
 class Methane(models.Model):
     STATUS1 = (
-        (1, '正常'),
-        (0, '异常')
+        (1, '无'),
+        (0, '有')
     )
     STATUS2 = (
         (1, '在线'),
@@ -251,8 +255,8 @@ class Display(models.Model):
     name = models.CharField(default="LCD显示屏", max_length=255, verbose_name="表名")
     insert_time = models.DateTimeField(default=datetime.now, verbose_name='显示内容更新时间')
     content = models.CharField(max_length=255, default="当前无内容", verbose_name='显示内容')
-    status = models.IntegerField(choices=STATUS1, verbose_name='设备状态')
-    online = models.IntegerField(choices=STATUS2, verbose_name='在线状态')
+    status = models.IntegerField(choices=STATUS1, verbose_name='设备状态', default=1)
+    online = models.IntegerField(choices=STATUS2, verbose_name='在线状态', default=1)
 
     class Meta:
         verbose_name = "LCD显示器"
